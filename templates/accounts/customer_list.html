@@ -19,7 +19,6 @@
                 <thead class="table-dark">
                     <tr>
                         <th>Name</th>
-                        <th>Phone</th>
                         <th class="text-end">Total Milk (L)</th>
                         <th>Actions</th>
                     </tr>
@@ -28,7 +27,6 @@
                     {% for customer in customers %}
                     <tr>
                         <td>{{ customer.name }}</td>
-                        <td>{{ customer.phone|default:"N/A" }}</td>
                         <td class="text-end">{{ customer.total_litres }}</td>
                         <td>
                             <a href="{% url 'accounts:customer_detail' customer.id %}" class="btn btn-sm btn-info">📋 View</a>

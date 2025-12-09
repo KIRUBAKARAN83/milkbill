@@ -7,8 +7,8 @@ PRICE_PER_LITRE = getattr(settings, 'PRICE_PER_LITRE', 50.0)
 
 class Customer(models.Model):
     name = models.CharField(max_length=200, blank=True, null=True)
-    phone = models.CharField(max_length=20, blank=True, null=True)
-    whatsapp_number = models.CharField(max_length=20, blank=True, null=True)
+    #phone = models.CharField(max_length=20, blank=True, null=True)
+    #whatsapp_number = models.CharField(max_length=20, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
 
