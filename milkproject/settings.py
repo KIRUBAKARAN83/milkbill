@@ -3,9 +3,9 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-change-me-please'
-DEBUG = True
-ALLOWED_HOSTS = []
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-me-please')
+DEBUG = os.environ.get('DEBUG', 'True') in ('True', 'true', '1')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',') if os.environ.get('ALLOWED_HOSTS') else []
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -48,7 +48,7 @@ TEMPLATES = [
     },
 ]
 
-PRICE_PER_LITRE = 50.0  # Add this
+PRICE_PER_LITRE = float(os.environ.get('PRICE_PER_LITRE', '50.0'))
 
 # ...existing code...
 
@@ -85,6 +85,7 @@ PRICE_PER_LITRE = 50.0
 TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '')
 TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
 TWILIO_WHATSAPP_NUMBER = os.environ.get('TWILIO_WHATSAPP_NUMBER', 'whatsapp:+14155238886')
+# ...existing code...
 # Add these lines at the end of settings.py
 
 # Login settings
