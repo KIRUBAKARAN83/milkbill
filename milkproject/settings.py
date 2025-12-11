@@ -3,10 +3,10 @@ from pathlib import Path
 from urllib.parse import urlparse
 from decimal import Decimal
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(milkbill).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-me-please')
-DEBUG = false
+DEBUG = FALSE
 
 # ALLOWED_HOSTS from env or sensible defaults
 ALLOWED_HOSTS = ['localhost','https://milkbill.onrender.com']
