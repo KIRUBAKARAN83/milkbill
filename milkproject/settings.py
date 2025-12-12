@@ -1,13 +1,12 @@
 import os
 from pathlib import Path
-import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-me-please')
 DEBUG = False
 
-ALLOWED_HOSTS = ['https://milkbill.onrender.com/','localhost','127.0.0.1']
+ALLOWED_HOSTS = ['milkbill.onrender.com', 'localhost', '127.0.0.1']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -22,7 +21,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',   # <-- FIXED
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -31,7 +30,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'milk_billing_complete.urls'  # <-- FIXED
+ROOT_URLCONF = 'milk_billing_complete.urls'
 
 TEMPLATES = [
     {
@@ -49,10 +48,9 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'milkproject.wsgi.application'  # <-- FIXED
+WSGI_APPLICATION = 'milkproject.wsgi.application'
 
-
-# Default DB (local SQLite)
+# ✅ SQLite3 only
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -60,22 +58,12 @@ DATABASES = {
     }
 }
 
-# Render Postgres override
-DATABASE_URL = os.environ.get("DATABASE_URL")
-if DATABASE_URL:
-    DATABASES["default"] = dj_database_url.config(
-        default=DATABASE_URL,
-        conn_max_age=600,
-        ssl_require=True
-    )
-
 AUTH_PASSWORD_VALIDATORS = []
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_TZ = True
-
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
