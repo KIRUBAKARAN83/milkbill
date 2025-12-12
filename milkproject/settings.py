@@ -3,6 +3,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 from decimal import Decimal
 import dj_database_url
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-me-please')
 DEBUG = 0
@@ -29,6 +30,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+
 ]
 
 ROOT_URLCONF = 'milkproject.urls'
@@ -53,6 +56,8 @@ TEMPLATES = [
 PRICE_PER_LITRE = float(os.environ.get('PRICE_PER_LITRE', '50.0'))
 
 WSGI_APPLICATION = 'milkproject.wsgi.application'
+
+
 
 # DATABASE configuration: use DATABASE_URL when provided (Postgres on Render)
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -104,8 +109,10 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
