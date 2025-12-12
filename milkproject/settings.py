@@ -50,9 +50,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'milkproject.wsgi.application'
+db_url = os.environ.get("DATABASE_URL")
+if not db_url:
+    raise Exception("DATABASE_URL is not set! Add it in Render Environment Variables.")
+
 DATABASES = {
     'default': dj_database_url.parse(
-        os.environ.get("DATABASE_URL", ""),
+        db_url,
         conn_max_age=600,
         ssl_require=True
     )
