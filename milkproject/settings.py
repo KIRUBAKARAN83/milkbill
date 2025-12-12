@@ -2,13 +2,13 @@ import os
 from pathlib import Path
 from urllib.parse import urlparse
 from decimal import Decimal
-
+import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-me-please')
 DEBUG = 0
 
 # ALLOWED_HOSTS from env or sensible defaults
-ALLOWED_HOSTS = ['localhost','https://milkbill.onrender.com']
+ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
