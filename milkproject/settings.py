@@ -1,14 +1,12 @@
 import os
 from pathlib import Path
-from urllib.parse import urlparse
-from decimal import Decimal
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-me-please')
-DEBUG = 0
 
-# ALLOWED_HOSTS from env or sensible defaults
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-me-please')
+DEBUG = False
+
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
@@ -24,18 +22,16 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',   # <-- FIXED
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware"),
-
-
 ]
 
-ROOT_URLCONF = 'milkproject.urls'
+ROOT_URLCONF = 'milk_billing_complete.urls'  # <-- FIXED
 
 TEMPLATES = [
     {
@@ -53,14 +49,10 @@ TEMPLATES = [
     },
 ]
 
-# Pricing from environment (fallback 50.0)
-PRICE_PER_LITRE = float(os.environ.get('PRICE_PER_LITRE', '50.0'))
-
-WSGI_APPLICATION = 'milkproject.wsgi.application'
+WSGI_APPLICATION = 'milk_billing_complete.wsgi.application'  # <-- FIXED
 
 
-
-# DATABASE configuration: use DATABASE_URL when provided (Postgres on Render)
+# Default DB (local SQLite)
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -68,9 +60,8 @@ DATABASES = {
     }
 }
 
-# Override with Postgres when DATABASE_URL exists (Render)
+# Render Postgres override
 DATABASE_URL = os.environ.get("DATABASE_URL")
-
 if DATABASE_URL:
     DATABASES["default"] = dj_database_url.config(
         default=DATABASE_URL,
@@ -83,30 +74,24 @@ AUTH_PASSWORD_VALIDATORS = []
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
-USE_L10N = True
 USE_TZ = True
+
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Twilio / external service placeholders (set in Render env)
+# Twilio settings
 TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '')
 TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
 TWILIO_WHATSAPP_NUMBER = os.environ.get('TWILIO_WHATSAPP_NUMBER', 'whatsapp:+14155238886')
 
-# Security settings helpful on Render
+# Render reverse proxy
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if os.environ.get('CSRF_TRUSTED_ORIGINS') else []
 
-# Login redirects
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'accounts:home'
-LOGOUT_REDIRECT_URL = 'login'
+CSRF_TRUSTED_ORIGINS = []
