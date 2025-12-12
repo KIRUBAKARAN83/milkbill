@@ -60,45 +60,22 @@ WSGI_APPLICATION = 'milkproject.wsgi.application'
 
 
 # DATABASE configuration: use DATABASE_URL when provided (Postgres on Render)
-DATABASE_URL = os.environ.get('DATABASE_URL')
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
+}
+
+# Override with Postgres when DATABASE_URL exists (Render)
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if DATABASE_URL:
-    parsed = urlparse(DATABASE_URL)
-    scheme = parsed.scheme.split('+')[0]  # handle scheme variants
-
-    if scheme in ('sqlite',):
-        db_path = parsed.path or ''
-        if db_path.startswith('/'):
-            db_path = db_path.lstrip('/')
-        db_name = BASE_DIR / db_path if db_path else BASE_DIR / 'db.sqlite3'
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': str(db_name),
-            }
-        }
-    else:
-        engine = 'django.db.backends.postgresql' if scheme in ('postgres', 'postgresql', 'psql') else (
-                 'django.db.backends.mysql' if scheme.startswith('mysql') else 'django.db.backends.postgresql')
-        DATABASES = {
-            'default': {
-                'ENGINE': engine,
-                'NAME': parsed.path.lstrip('/') if parsed.path else '',
-                'USER': parsed.username or '',
-                'PASSWORD': parsed.password or '',
-                'HOST': parsed.hostname or '',
-                'PORT': parsed.port or '',
-                'CONN_MAX_AGE': int(os.environ.get('DB_CONN_MAX_AGE', 600)),
-                'OPTIONS': {'sslmode': os.environ.get('DB_SSLMODE', 'require')},
-            }
-        }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+    DATABASES["default"] = dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,
+        ssl_require=True
+    )
 
 AUTH_PASSWORD_VALIDATORS = []
 
