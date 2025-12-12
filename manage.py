@@ -3,7 +3,7 @@ import os
 import sys
 
 def main():
-   os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'milk_billing_complete\milkproject.settings')
+   os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'milkproject.settings')
 
     try:
         from django.core.management import execute_from_command_line
