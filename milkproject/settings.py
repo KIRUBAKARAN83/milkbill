@@ -49,7 +49,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'milk_billing_complete.wsgi.application'  # <-- FIXED
+WSGI_APPLICATION = 'milk_billing_complete\milkproject.wsgi.application'  # <-- FIXED
 
 
 # Default DB (local SQLite)
