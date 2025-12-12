@@ -1,17 +1,25 @@
+
+
+import os
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "YOURPROJECTNAME.settings")
+django.setup()
+
 from django.contrib.auth import get_user_model
-from django.db.utils import IntegrityError
 
 User = get_user_model()
 
-username = "kiruba_karan_123"
-password = "kiruba@123"
-email = "dhayalankiruba17@gmail.com"
+username = os.environ.get("DJANGO_SUPERUSER_USERNAME")
+password = os.environ.get("DJANGO_SUPERUSER_PASSWORD")
+email = os.environ.get("DJANGO_SUPERUSER_EMAIL")
 
-try:
+if not username or not password:
+    print("Superuser env variables missing — skipping.")
+else:
     if not User.objects.filter(username=username).exists():
         User.objects.create_superuser(username=username, password=password, email=email)
-        print("Superuser created")
+        print("Superuser created.")
     else:
-        print("Superuser already exists")
-except IntegrityError:
-    print("Error creating superuser")
+        print("Superuser already exists.")
+
