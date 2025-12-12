@@ -1,5 +1,3 @@
-
-
 import os
 import django
 
@@ -15,11 +13,10 @@ password = os.environ.get("DJANGO_SUPERUSER_PASSWORD")
 email = os.environ.get("DJANGO_SUPERUSER_EMAIL")
 
 if not username or not password:
-    print("Superuser env variables missing — skipping.")
+    print("Superuser environment variables missing — skipping creation.")
 else:
     if not User.objects.filter(username=username).exists():
         User.objects.create_superuser(username=username, password=password, email=email)
-        print("Superuser created.")
+        print(f"Superuser {username} created.")
     else:
-        print("Superuser already exists.")
-
+        print(f"Superuser {username} already exists — skipping creation.")
