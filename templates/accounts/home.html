@@ -23,11 +23,11 @@
     .sidebar {
       width: 260px;
       min-height: 100vh;
-      background: linear-gradient(180deg, #064e3b, #022c22);
+      background: linear-gradient(180deg, #0ea5e9, #0284c7);
       position: fixed;
       left: 0;
       top: 0;
-      color: 	#000080;
+      color: #e0f2fe;
       display: flex;
       flex-direction: column;
     }
@@ -41,11 +41,11 @@
       margin: 0;
       font-size: 18px;
       font-weight: 700;
-      color: #ecfdf5;
+      color: #ffffff;
     }
 
     .sidebar-header small {
-      color: #a7f3d0;
+      color: #bae6fd;
     }
 
     /* Sidebar Nav */
@@ -54,11 +54,10 @@
       align-items: center;
       gap: 12px;
       padding: 13px 22px;
-      color:   #d1fae5; 
+      color: #e0f2fe;
       text-decoration: none;
       font-size: 14px;
       border-left: 3px solid transparent;
-      position: relative;
       transition:
         background 0.25s ease,
         color 0.25s ease,
@@ -67,30 +66,22 @@
         border-left-color 0.25s ease;
     }
 
-    .sidebar-nav i {
-      font-size: 16px;
-      opacity: 0.9;
+    .sidebar-nav a:hover {
+      background: rgba(10, 37, 64, 0.25);
+      border-left-color: #1d4ed8;
+      transform: translateX(4px);
     }
 
-   .sidebar-nav a:hover {
-  background: rgba(10, 37, 64, 0.22);
-  border-left-color: #1d4ed8;
-  color: #e0f2fe;
-  transform: translateX(4px);
-}
+    .sidebar-nav a:active {
+      transform: translateX(2px) scale(0.97);
+      background: rgba(10, 37, 64, 0.35);
+    }
 
-.sidebar-nav a:active {
-  transform: translateX(2px) scale(0.97);
-  background: rgba(10, 37, 64, 0.35);
-}
-
-.sidebar-nav a.active {
-  background: rgba(10, 37, 64, 0.35);
-  border-left-color: #1d4ed8;
-  color: #e0f2fe;
-  box-shadow: inset 0 0 0 1px rgba(29, 78, 216, 0.45);
-}
-
+    .sidebar-nav a.active {
+      background: rgba(10, 37, 64, 0.35);
+      border-left-color: #1d4ed8;
+      box-shadow: inset 0 0 0 1px rgba(29, 78, 216, 0.45);
+    }
 
     /* Logout */
     .sidebar-footer {
@@ -110,10 +101,6 @@
       color: #fff;
       text-decoration: none;
       font-size: 14px;
-    }
-
-    .sidebar-footer a:hover {
-      filter: brightness(1.05);
     }
 
     /* Main Content */
@@ -142,11 +129,6 @@
       transition: opacity 0.25s ease, transform 0.25s ease;
     }
 
-    .page-title {
-      font-weight: 700;
-      margin-bottom: 26px;
-    }
-
     /* Stats */
     .stats-cards {
       display: grid;
@@ -155,6 +137,7 @@
       margin-bottom: 34px;
     }
 
+    /* ✅ STAT CARD – FULLY MERGED */
     .stat-card {
       background: #ffffff;
       border-radius: 14px;
@@ -163,6 +146,10 @@
       box-shadow: 0 10px 20px rgba(0,0,0,0.04);
       position: relative;
       overflow: hidden;
+      transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease;
     }
 
     .stat-card::after {
@@ -170,7 +157,20 @@
       position: absolute;
       inset: auto 0 0 0;
       height: 4px;
-      background: linear-gradient(90deg, #22c55e, #16a34a);
+      background: linear-gradient(90deg, #0a2540, #1d4ed8);
+      transform: scaleX(0.6);
+      transform-origin: left;
+      transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 18px 36px rgba(10, 37, 64, 0.18);
+      border-color: rgba(29, 78, 216, 0.4);
+    }
+
+    .stat-card:hover::after {
+      transform: scaleX(1);
     }
 
     .stat-card h6 {
@@ -185,35 +185,28 @@
       font-size: 30px;
       font-weight: 800;
       margin: 0;
-      color: #0f172a;
     }
 
     /* Table */
     .card {
-      border: none;
       border-radius: 14px;
       box-shadow: 0 10px 22px rgba(0,0,0,0.05);
+      border: none;
     }
 
-   .card-header {
-  background: linear-gradient(90deg, #0a2540, #123c66);
-  color: #ffffff;
-  border-radius: 14px 14px 0 0;
-  padding: 16px 22px;
-  font-weight: 600;
-}
-
+    .card-header {
+      background: linear-gradient(90deg, #0a2540, #123c66);
+      color: #ffffff;
+      border-radius: 14px 14px 0 0;
+      padding: 16px 22px;
+      font-weight: 600;
+    }
 
     table th {
       font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
-      color: #64748b;
       background: #f8fafc;
-    }
-
-    table td {
-      color: #334155;
     }
 
     @media(max-width:768px) {
@@ -238,23 +231,16 @@
     </div>
 
     <nav class="sidebar-nav">
-      <a href="{% url 'accounts:home' %}"
-         class="{% if request.path == '/' %}active{% endif %}">
+      <a href="{% url 'accounts:home' %}" class="{% if request.path == '/' %}active{% endif %}">
         <i class="bi bi-speedometer2"></i> Dashboard
       </a>
-
-      <a href="{% url 'accounts:customer_list' %}"
-         class="{% if 'customer' in request.path %}active{% endif %}">
+      <a href="{% url 'accounts:customer_list' %}" class="{% if 'customer' in request.path %}active{% endif %}">
         <i class="bi bi-people"></i> Customers
       </a>
-
-      <a href="{% url 'accounts:add_entry' %}"
-         class="{% if 'add' in request.path %}active{% endif %}">
+      <a href="{% url 'accounts:add_entry' %}" class="{% if 'add' in request.path %}active{% endif %}">
         <i class="bi bi-plus-circle"></i> Add Entry
       </a>
-
-      <a href="{% url 'accounts:monthly_summary' %}"
-         class="{% if 'monthly' in request.path %}active{% endif %}">
+      <a href="{% url 'accounts:monthly_summary' %}" class="{% if 'monthly' in request.path %}active{% endif %}">
         <i class="bi bi-calendar-month"></i> Monthly Summary
       </a>
     </nav>
@@ -271,27 +257,10 @@
     <h2 class="page-title">Dashboard Overview</h2>
 
     <div class="stats-cards">
-      <div class="stat-card">
-        <h6>Total Customers</h6>
-        <h3>{{ total_customers }}</h3>
-      </div>
-
-      <div class="stat-card">
-        <h6>Total Milk (Litres)</h6>
-        <h3>{{ total_litres }}</h3>
-      </div>
-
-      <div class="stat-card">
-        <h6>Total Balance (₹)</h6>
-        <h3 class="{% if total_balance > 0 %}text-success{% elif total_balance < 0 %}text-danger{% endif %}">
-          ₹ {{ total_balance }}
-        </h3>
-      </div>
-
-      <div class="stat-card">
-        <h6>Total Amount (₹)</h6>
-        <h3>₹ {{ total_amount|floatformat:2 }}</h3>
-      </div>
+      <div class="stat-card"><h6>Total Customers</h6><h3>{{ total_customers }}</h3></div>
+      <div class="stat-card"><h6>Total Milk (Litres)</h6><h3>{{ total_litres }}</h3></div>
+      <div class="stat-card"><h6>Total Balance (₹)</h6><h3>₹ {{ total_balance }}</h3></div>
+      <div class="stat-card"><h6>Total Amount (₹)</h6><h3>₹ {{ total_amount|floatformat:2 }}</h3></div>
     </div>
 
     <div class="card">
@@ -300,11 +269,7 @@
         <table class="table mb-0 align-middle">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Customer</th>
-              <th>Qty (ml)</th>
-              <th>Litres</th>
-              <th>Amount (₹)</th>
+              <th>Date</th><th>Customer</th><th>Qty</th><th>Litres</th><th>Amount</th>
             </tr>
           </thead>
           <tbody>
@@ -317,32 +282,13 @@
               <td>₹ {{ entry.amount|floatformat:2 }}</td>
             </tr>
             {% empty %}
-            <tr>
-              <td colspan="5" class="text-center text-muted py-4">
-                No entries found
-              </td>
-            </tr>
+            <tr><td colspan="5" class="text-center text-muted py-4">No entries found</td></tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
     </div>
   </main>
-
-  <!-- Page transition JS -->
-  <script>
-    document.querySelectorAll('.sidebar-nav a').forEach(link => {
-      link.addEventListener('click', function (e) {
-        if (this.classList.contains('active')) return;
-        e.preventDefault();
-        const target = this.href;
-        document.querySelector('.page-wrapper').classList.add('page-exit');
-        setTimeout(() => {
-          window.location.href = target;
-        }, 250);
-      });
-    });
-  </script>
 
 </body>
 </html>
