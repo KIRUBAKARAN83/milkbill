@@ -1,9 +1,10 @@
 import os
 import django
-from django.contrib.auth import get_user_model
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "milkproject.settings")
 django.setup()
+
+from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
@@ -12,10 +13,19 @@ password = os.environ.get("DJANGO_SUPERUSER_PASSWORD")
 email = os.environ.get("DJANGO_SUPERUSER_EMAIL")
 
 if not username or not password:
-    print("Superuser environment variables missing — skipping creation.")
+    print("Missing env vars")
 else:
-    if not User.objects.filter(username=username).exists():
-        User.objects.create_superuser(username=username, password=password, email=email)
-        print(f"Superuser {username} created.")
+    user, created = User.objects.get_or_create(
+        username=username,
+        defaults={"email": email}
+    )
+
+    user.set_password(password)
+    user.is_staff = True
+    user.is_superuser = True
+    user.save()
+
+    if created:
+        print("Superuser created")
     else:
-        print(f"Superuser {username} already exists — skipping creation.")
+        print("Superuser password updated")
