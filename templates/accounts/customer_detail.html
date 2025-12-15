@@ -128,5 +128,49 @@ document.addEventListener('DOMContentLoaded',()=>{
     loadMilkChart("{% url 'accounts:chart_data' customer.id %}", 'milkChart');
 });
 </script>
+    <script>
+function getCSRFToken() {
+    let cookieValue = null;
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith('csrftoken=')) {
+            cookieValue = cookie.substring('csrftoken='.length);
+            break;
+        }
+    }
+    return cookieValue;
+}
+
+function deleteEntry(entryId, btn) {
+    if (!confirm("Delete this entry?")) return;
+
+    fetch(`/entry/${entryId}/delete/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCSRFToken(),
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            alert("Delete failed. Try again.");
+            return;
+        }
+
+        // Smooth fade-out animation
+        const row = btn.closest("tr");
+        row.style.transition = "opacity 0.25s ease";
+        row.style.opacity = "0";
+
+        setTimeout(() => {
+            row.remove();
+        }, 250);
+    })
+    .catch(() => {
+        alert("Network error. Try again.");
+    });
+}
+</script>
+
 </body>
 </html>
