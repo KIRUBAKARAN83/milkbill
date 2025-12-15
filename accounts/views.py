@@ -32,9 +32,10 @@ def home(request):
     total_litres = round(Decimal(total_ml) / Decimal(1000), 2)
     total_amount = round(total_litres * Decimal(PRICE_PER_LITRE), 2)
 
-    total_balance = Customer.objects.aggregate(
-        balance=Sum('balance_amount')
-    )['balance'] or Decimal(0)
+    total_balance = (
+        Customer.objects.aggregate(balance=Sum('balance_amount'))['balance']
+        or Decimal(0)
+    )
 
     last_entries = (
         MilkEntry.objects
@@ -135,11 +136,14 @@ def add_entry(request):
                     name=new_name.strip()
                 )
 
-            MilkEntry.objects.create(
+            entry = MilkEntry.objects.create(
                 customer=customer,
                 date=form.cleaned_data['date'],
                 quantity_ml=form.cleaned_data['quantity_ml']
             )
+
+            # ✅ IMPORTANT
+            customer.recalculate_balance()
 
             return redirect('accounts:customer_list')
     else:
@@ -157,6 +161,10 @@ def edit_entry(request, entry_id):
         form = MilkEntryForm(request.POST, instance=entry)
         if form.is_valid():
             form.save()
+
+            # ✅ Recalculate after edit
+            entry.customer.recalculate_balance()
+
             return redirect(
                 'accounts:customer_detail',
                 customer_id=entry.customer.id
@@ -167,7 +175,7 @@ def edit_entry(request, entry_id):
     return render(request, 'accounts/entry_form.html', {'form': form})
 
 
-# ---------------- EDIT CUSTOMER ----------------
+# ---------------- EDIT / DELETE CUSTOMER ----------------
 
 @login_required(login_url='login')
 @require_http_methods(["GET", "POST"])
@@ -196,8 +204,6 @@ def edit_customer(request, customer_id):
     )
 
 
-# ---------------- DELETE CUSTOMER (FIXED) ----------------
-
 @login_required(login_url='login')
 @require_http_methods(["POST"])
 def delete_customer(request, customer_id):
@@ -214,7 +220,11 @@ def delete_entry(request, entry_id):
     entry = get_object_or_404(MilkEntry, id=entry_id, is_deleted=False)
     entry.is_deleted = True
     entry.save()
-    return JsonResponse({'status': 'deleted', 'amount': float(entry.amount)})
+
+    # ✅ balance fix
+    entry.customer.recalculate_balance()
+
+    return JsonResponse({'status': 'deleted'})
 
 
 @login_required(login_url='login')
@@ -223,7 +233,11 @@ def restore_entry(request, entry_id):
     entry = get_object_or_404(MilkEntry, id=entry_id, is_deleted=True)
     entry.is_deleted = False
     entry.save()
-    return JsonResponse({'status': 'restored', 'amount': float(entry.amount)})
+
+    # ✅ balance fix
+    entry.customer.recalculate_balance()
+
+    return JsonResponse({'status': 'restored'})
 
 
 # ---------------- PDF DOWNLOAD ----------------
@@ -301,10 +315,7 @@ def send_bill_whatsapp(request, customer_id, year, month):
     file_content = ContentFile(pdf_buffer.getvalue())
     saved_path = default_storage.save(filename, file_content)
 
-    pdf_url = request.build_absolute_uri(
-        settings.MEDIA_URL + saved_path
-    )
-
+    pdf_url = request.build_absolute_uri(settings.MEDIA_URL + saved_path)
     month_name = datetime(year, month, 1).strftime('%B %Y')
 
     send_whatsapp_pdf(
