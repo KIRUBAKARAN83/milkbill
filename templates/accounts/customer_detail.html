@@ -31,6 +31,11 @@ body{background:#f4f6f9}
       </small>
     </div>
     <div class="d-flex gap-2">
+      <a href="{% url 'accounts:send_bill_whatsapp' customer.id month.year month.month %}"
+   class="btn btn-success btn-sm">
+   💬 WhatsApp
+</a>
+
       <a href="{% url 'accounts:add_entry' %}" class="btn btn-primary btn-sm">➕ Add</a>
       <a href="{% url 'accounts:bill_pdf' customer.id %}" class="btn btn-danger btn-sm">📄 Bill</a>
     </div>
