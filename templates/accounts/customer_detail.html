@@ -30,31 +30,46 @@ body{background:#f4f6f9}
 .table tbody tr:hover{
     background:#f1f5f9;
 }
+.action-col{
+    width:120px;
+    white-space:nowrap;
+}
+.action-btn{
+    padding:2px 6px;
+}
 </style>
 </head>
 
 <body>
 <div class="container mt-4">
+    
 
+<!-- Customer header -->
 <div class="card fade-card p-3 mb-3">
-    <div class="d-flex justify-content-between">
+    <div class="d-flex justify-content-between align-items-center">
         <div>
-            <h4>{{ customer.name }}</h4>
-            <small>Balance: ₹ {{ customer.balance_amount|floatformat:2 }}</small>
+            <h4 class="mb-1">{{ customer.name }}</h4>
+            <small class="text-muted">
+                Balance: ₹ {{ customer.balance_amount|floatformat:2 }}
+            </small>
         </div>
         <div class="d-flex gap-2">
             <a href="{% url 'accounts:add_entry' %}" class="btn btn-primary btn-sm">➕ Add</a>
             <a href="{% url 'accounts:bill_pdf' customer.id %}" class="btn btn-danger btn-sm">📄 Bill</a>
+            <a href="{% url 'accounts:customer_list' %}" class="btn btn-secondary">← Back to Customers</a>
         </div>
     </div>
 </div>
 
+<!-- Monthly entries -->
 {% for month in months_data %}
 <div class="card month-card mb-3 fade-card">
-    <div class="card-header d-flex justify-content-between">
+    <div class="card-header d-flex justify-content-between align-items-center">
         <strong>{{ month.month_name }}</strong>
-        <a href="{% url 'accounts:bill_pdf_month' customer.id month.year month.month %}" class="btn btn-outline-danger btn-sm">📥 PDF</a>
+        <a href="{% url 'accounts:bill_pdf_month' customer.id month.year month.month %}"
+           class="btn btn-outline-danger btn-sm">📥 PDF</a>
     </div>
+
     <table class="table table-sm mb-0">
         <thead class="table-light">
             <tr>
@@ -62,6 +77,7 @@ body{background:#f4f6f9}
                 <th class="text-end">ML</th>
                 <th class="text-end">Litres</th>
                 <th class="text-end">Amount</th>
+                <th class="text-end action-col">Action</th>
             </tr>
         </thead>
         <tbody>
@@ -71,6 +87,27 @@ body{background:#f4f6f9}
             <td class="text-end">{{ entry.quantity_ml }}</td>
             <td class="text-end">{{ entry.litres|floatformat:2 }}</td>
             <td class="text-end">₹ {{ entry.amount|floatformat:2 }}</td>
+
+            <!-- ACTIONS -->
+            <td class="text-end action-col">
+                <a href="{% url 'accounts:edit_entry' entry.id %}"
+                   class="btn btn-sm btn-outline-warning action-btn"
+                   title="Edit entry">
+                    ✏️
+                </a>
+
+                <form method="post"
+                      action="{% url 'accounts:delete_entry' entry.id %}"
+                      class="d-inline"
+                      onsubmit="return confirm('Delete entry on {{ entry.date|date:\"d-m-Y\" }}?');">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="btn btn-sm btn-outline-danger action-btn"
+                            title="Delete entry">
+                        🗑️
+                    </button>
+                </form>
+            </td>
         </tr>
         {% endfor %}
         </tbody>
@@ -78,6 +115,7 @@ body{background:#f4f6f9}
 </div>
 {% endfor %}
 
+<!-- Chart -->
 <div class="card fade-card p-3">
     <h6 class="mb-2">📊 Consumption Trend</h6>
     <canvas id="milkChart" height="280"></canvas>
@@ -87,7 +125,7 @@ body{background:#f4f6f9}
 
 <script>
 document.addEventListener('DOMContentLoaded',()=>{
-    loadMilkChart("{% url 'accounts:chart_data' customer.id %}",'milkChart');
+    loadMilkChart("{% url 'accounts:chart_data' customer.id %}", 'milkChart');
 });
 </script>
 </body>
