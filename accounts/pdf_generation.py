@@ -69,10 +69,11 @@ def generate_bill_pdf(
     # ---------------- TITLE ----------------
     elements.append(Paragraph("Milk Billing Invoice", title_style))
 
-    if year and month:
-        period_text = f"Billing Period: {month:02d}/{year}"
-    else:
-        period_text = "Billing Period: All Records"
+   if year and month:
+    month_name = datetime(year, month, 1).strftime('%B %Y')
+    period_text = f"Billing Period: {month_name}"
+else:
+    period_text = "Billing Period: All Records"
 
     elements.append(
         Paragraph(
