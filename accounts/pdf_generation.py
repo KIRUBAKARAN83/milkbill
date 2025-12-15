@@ -3,7 +3,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+from reportlab.lib.enums import TA_CENTER
 from datetime import datetime
 from io import BytesIO
 from decimal import Decimal
@@ -41,7 +41,6 @@ def generate_bill_pdf(
         'Title',
         parent=styles['Heading1'],
         fontSize=20,
-        textColor=colors.black,
         alignment=TA_CENTER,
         spaceAfter=12,
         fontName='Helvetica-Bold'
@@ -51,7 +50,6 @@ def generate_bill_pdf(
         'Heading',
         parent=styles['Heading3'],
         fontSize=11,
-        textColor=colors.black,
         spaceAfter=6,
         fontName='Helvetica-Bold'
     )
@@ -60,7 +58,6 @@ def generate_bill_pdf(
         'NormalText',
         parent=styles['Normal'],
         fontSize=10,
-        textColor=colors.black,
         spaceAfter=4
     )
 
@@ -69,11 +66,12 @@ def generate_bill_pdf(
     # ---------------- TITLE ----------------
     elements.append(Paragraph("Milk Billing Invoice", title_style))
 
-   if year and month:
-    month_name = datetime(year, month, 1).strftime('%B %Y')
-    period_text = f"Billing Period: {month_name}"
-   else:
-    period_text = "Billing Period: All Records"
+    # ✅ FIXED BLOCK
+    if year and month:
+        month_name = datetime(year, month, 1).strftime('%B %Y')
+        period_text = f"Billing Period: {month_name}"
+    else:
+        period_text = "Billing Period: All Records"
 
     elements.append(
         Paragraph(
@@ -81,6 +79,7 @@ def generate_bill_pdf(
             normal_style
         )
     )
+
     elements.append(Spacer(1, 0.2 * inch))
 
     # ---------------- CUSTOMER INFO ----------------
@@ -124,7 +123,6 @@ def generate_bill_pdf(
     else:
         table_data.append(["No entries", "", "", "", ""])
 
-    # Totals row
     table_data.append([
         "TOTAL",
         str(total_ml),
@@ -135,43 +133,17 @@ def generate_bill_pdf(
 
     entries_table = Table(
         table_data,
-        colWidths=[1.2 * inch] * 5,
-        hAlign='LEFT'
+        colWidths=[1.2 * inch] * 5
     )
 
     entries_table.setStyle(TableStyle([
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('ALIGN', (1, 1), (-1, -1), 'RIGHT'),
-        ('ALIGN', (0, 0), (0, -1), 'LEFT'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
         ('LINEBELOW', (0, 0), (-1, 0), 1, colors.black),
         ('LINEABOVE', (0, -1), (-1, -1), 1, colors.black),
     ]))
 
     elements.append(entries_table)
-    elements.append(Spacer(1, 0.25 * inch))
-
-    # ---------------- SUMMARY ----------------
-    elements.append(Paragraph("Summary", heading_style))
-
-    summary_table = Table(
-        [
-            ["Total Quantity", f"{total_ml} ml"],
-            ["Total Litres", f"{total_litres:.2f} L"],
-            ["Rate per Litre", f"₹ {Decimal(price_per_litre):.2f}"],
-            ["Total Amount", f"₹ {Decimal(total_amount):.2f}"],
-        ],
-        colWidths=[2.5 * inch, 2 * inch]
-    )
-
-    summary_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('LINEABOVE', (0, -1), (-1, -1), 1, colors.black),
-    ]))
-
-    elements.append(summary_table)
     elements.append(Spacer(1, 0.3 * inch))
 
     # ---------------- FOOTER ----------------
@@ -183,9 +155,7 @@ def generate_bill_pdf(
         textColor=colors.grey
     )
 
-    elements.append(
-        Paragraph("Thank you for your business.", footer_style)
-    )
+    elements.append(Paragraph("Thank you for your business.", footer_style))
 
     doc.build(elements)
     buffer.seek(0)
