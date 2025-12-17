@@ -2,18 +2,23 @@ from django.db import models
 from django.utils import timezone
 from django.conf import settings
 from decimal import Decimal
-from django.db.models import Sum
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField
 from django.db.models.functions import Lower
 
-PRICE_PER_LITRE = getattr(settings, 'PRICE_PER_LITRE', 50.0)
+PRICE_PER_LITRE = Decimal(
+    getattr(settings, 'PRICE_PER_LITRE', 50)
+)
 
 
 class Customer(models.Model):
     name = models.CharField(max_length=200)
+
+    # 🔒 Derived field – NEVER manually edited
     balance_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=Decimal('0.00')
+        default=Decimal('0.00'),
+        editable=False
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -32,16 +37,18 @@ class Customer(models.Model):
         return self.name
 
     # ✅ SINGLE SOURCE OF TRUTH
-    # Balance = sum of non-deleted milk entry amounts
+    # Balance = sum of all NON-DELETED milk entry amounts
     def recalculate_balance(self):
+        amount_expr = ExpressionWrapper(
+            F('quantity_ml') * PRICE_PER_LITRE / Decimal('1000'),
+            output_field=DecimalField(max_digits=10, decimal_places=2)
+        )
+
         total = (
             self.milk_entries
             .filter(is_deleted=False)
-            .aggregate(
-                total=Sum(
-                    models.F('quantity_ml') * Decimal(PRICE_PER_LITRE) / Decimal(1000)
-                )
-            )['total']
+            .aggregate(total=Sum(amount_expr))
+            .get('total')
             or Decimal('0.00')
         )
 
@@ -70,11 +77,11 @@ class MilkEntry(models.Model):
 
     @property
     def litres(self):
-        return Decimal(self.quantity_ml) / Decimal(1000)
+        return Decimal(self.quantity_ml) / Decimal('1000')
 
     @property
     def amount(self):
-        return self.litres * Decimal(PRICE_PER_LITRE)
+        return self.litres * PRICE_PER_LITRE
 
     def __str__(self):
         return f"{self.customer.name} | {self.date} | {self.quantity_ml} ml"
