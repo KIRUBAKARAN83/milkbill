@@ -371,3 +371,29 @@ def monthly_summary(request):
         'start': start,
         'end': end
     })
+
+    # ─────────────────────────────
+# FINANCE (INCOME / EXPENSE)
+# ─────────────────────────────
+
+@login_required(login_url='login')
+def finance_list(request):
+    """
+    Temporary placeholder.
+    Replace with real FinanceEntry model later.
+    """
+    return render(request, 'accounts/finance_list.html')
+
+
+@login_required(login_url='login')
+@require_http_methods(["GET", "POST"])
+def add_finance_entry(request):
+    """
+    Temporary stub so URLs don't crash.
+    """
+    if request.method == 'POST':
+        # later: save income / expense
+        return redirect('accounts:finance_list')
+
+    return render(request, 'accounts/finance_form.html')
+
