@@ -37,16 +37,14 @@ def home(request):
         except ValueError:
             entries = entries.filter(customer__name__icontains=search_query)
 
-    total_ml = entries.aggregate(total=Sum('quantity_ml')).get('total') or 0
+    total_ml = entries.aggregate(total=Sum('quantity_ml'))['total'] or 0
     total_litres = Decimal(total_ml) / Decimal(1000)
     total_amount = total_litres * Decimal(PRICE_PER_LITRE)
 
-    # Global stats (NOT filtered)
     total_customers = Customer.objects.count()
-    total_balance = (
-        Customer.objects.aggregate(balance=Sum('balance_amount'))
-        .get('balance') or Decimal(0)
-    )
+    total_balance = Customer.objects.aggregate(
+        balance=Sum('balance_amount')
+    )['balance'] or Decimal(0)
 
     last_entries = entries.order_by('-date')[:10]
 
@@ -61,22 +59,17 @@ def home(request):
 
 
 # ─────────────────────────────
-# CUSTOMER LIST (FIXED)
+# CUSTOMER LIST
 # ─────────────────────────────
 @login_required(login_url='login')
 def customer_list(request):
-    customers = (
-        Customer.objects
-        .all()
-        .prefetch_related('milk_entries')  # 🔥 critical fix
-    )
+    customers = Customer.objects.all().prefetch_related('milk_entries')
 
     for c in customers:
         total_ml = (
             c.milk_entries
             .filter(is_deleted=False)
-            .aggregate(total=Sum('quantity_ml'))
-            .get('total') or 0
+            .aggregate(total=Sum('quantity_ml'))['total'] or 0
         )
         c.total_litres = round(Decimal(total_ml) / Decimal(1000), 2)
 
@@ -92,11 +85,10 @@ def customer_list(request):
 def customer_detail(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
 
-    entries = (
-        MilkEntry.objects
-        .filter(customer=customer, is_deleted=False)
-        .order_by('-date')
-    )
+    entries = MilkEntry.objects.filter(
+        customer=customer,
+        is_deleted=False
+    ).order_by('-date')
 
     months = {}
 
@@ -166,10 +158,7 @@ def edit_entry(request, entry_id):
     if request.method == 'POST' and form.is_valid():
         form.save()
         entry.customer.recalculate_balance()
-        return redirect(
-            'accounts:customer_detail',
-            customer_id=entry.customer.id
-        )
+        return redirect('accounts:customer_detail', customer_id=entry.customer.id)
 
     return render(request, 'accounts/entry_form.html', {'form': form})
 
@@ -198,6 +187,24 @@ def restore_entry(request, entry_id):
 
 
 # ─────────────────────────────
+# ✅ CHART DATA (THIS WAS MISSING)
+# ─────────────────────────────
+@login_required(login_url='login')
+def chart_data(request, customer_id):
+    customer = get_object_or_404(Customer, id=customer_id)
+
+    entries = MilkEntry.objects.filter(
+        customer=customer,
+        is_deleted=False
+    ).order_by('date')
+
+    return JsonResponse({
+        'labels': [e.date.strftime('%Y-%m-%d') for e in entries],
+        'data': [float(e.litres) for e in entries],
+    })
+
+
+# ─────────────────────────────
 # PDF BILL
 # ─────────────────────────────
 @login_required(login_url='login')
@@ -212,7 +219,7 @@ def bill_pdf(request, customer_id, year=None, month=None):
     else:
         filename = f"bill_{customer.id}_all.pdf"
 
-    total_ml = entries.aggregate(total=Sum('quantity_ml')).get('total') or 0
+    total_ml = entries.aggregate(total=Sum('quantity_ml'))['total'] or 0
     total_litres = Decimal(total_ml) / Decimal(1000)
     total_amount = total_litres * Decimal(PRICE_PER_LITRE)
 
@@ -250,7 +257,7 @@ def send_bill_whatsapp(request, customer_id, year, month):
     if not entries.exists():
         return JsonResponse({'error': 'No entries'}, status=400)
 
-    total_ml = entries.aggregate(total=Sum('quantity_ml')).get('total') or 0
+    total_ml = entries.aggregate(total=Sum('quantity_ml'))['total'] or 0
     total_litres = Decimal(total_ml) / Decimal(1000)
     total_amount = total_litres * Decimal(PRICE_PER_LITRE)
 
