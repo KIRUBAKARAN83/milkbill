@@ -18,11 +18,11 @@ from .whatsapp import send_whatsapp_pdf
 
 
 # ─────────────────────────────
-# DASHBOARD + SEARCH
+# DASHBOARD + SEARCH (FIXED)
 # ─────────────────────────────
 @login_required(login_url='login')
 def home(request):
-    query = request.GET.get('q', '').strip()
+    search_query = request.GET.get('q', '').strip()
 
     entries = (
         MilkEntry.objects
@@ -30,17 +30,18 @@ def home(request):
         .select_related('customer')
     )
 
-    if query:
+    if search_query:
         try:
-            parsed_date = datetime.strptime(query, '%Y-%m-%d').date()
+            parsed_date = datetime.strptime(search_query, '%Y-%m-%d').date()
             entries = entries.filter(date=parsed_date)
         except ValueError:
-            entries = entries.filter(customer__name__icontains=query)
+            entries = entries.filter(customer__name__icontains=search_query)
 
     total_ml = entries.aggregate(total=Sum('quantity_ml'))['total'] or 0
     total_litres = Decimal(total_ml) / Decimal(1000)
     total_amount = total_litres * Decimal(PRICE_PER_LITRE)
 
+    # Global stats (NOT affected by search)
     total_customers = Customer.objects.count()
     total_balance = Customer.objects.aggregate(
         balance=Sum('balance_amount')
@@ -49,7 +50,7 @@ def home(request):
     last_entries = entries.order_by('-date')[:10]
 
     return render(request, 'accounts/home.html', {
-        'query': query,
+        'search_query': search_query,   # ✅ FIX
         'total_customers': total_customers,
         'total_litres': round(total_litres, 2),
         'total_amount': round(total_amount, 2),
@@ -111,13 +112,17 @@ def customer_detail(request, customer_id):
 
     return render(request, 'accounts/customer_detail.html', {
         'customer': customer,
-        'months_data': sorted(months.values(), key=lambda x: (x['year'], x['month']), reverse=True),
+        'months_data': sorted(
+            months.values(),
+            key=lambda x: (x['year'], x['month']),
+            reverse=True
+        ),
         'total_entries': entries.count(),
     })
 
 
 # ─────────────────────────────
-# ADD / EDIT ENTRY
+# ADD / EDIT ENTRY (SAFE)
 # ─────────────────────────────
 @login_required(login_url='login')
 @require_http_methods(["GET", "POST"])
@@ -129,9 +134,11 @@ def add_entry(request):
         name = form.cleaned_data.get('customer_name')
 
         if not customer and name:
-            customer, _ = Customer.objects.get_or_create(name=name.strip())
+            customer, _ = Customer.objects.get_or_create(
+                name=name.strip()
+            )
 
-        MilkEntry.objects.create(
+        entry = MilkEntry.objects.create(
             customer=customer,
             date=form.cleaned_data['date'],
             quantity_ml=form.cleaned_data['quantity_ml']
@@ -152,7 +159,10 @@ def edit_entry(request, entry_id):
     if request.method == 'POST' and form.is_valid():
         form.save()
         entry.customer.recalculate_balance()
-        return redirect('accounts:customer_detail', customer_id=entry.customer.id)
+        return redirect(
+            'accounts:customer_detail',
+            customer_id=entry.customer.id
+        )
 
     return render(request, 'accounts/entry_form.html', {'form': form})
 
@@ -205,7 +215,10 @@ def chart_data(request, customer_id):
 def bill_pdf(request, customer_id, year=None, month=None):
     customer = get_object_or_404(Customer, id=customer_id)
 
-    entries = MilkEntry.objects.filter(customer=customer, is_deleted=False)
+    entries = MilkEntry.objects.filter(
+        customer=customer,
+        is_deleted=False
+    )
 
     if year and month:
         entries = entries.filter(date__year=year, date__month=month)
@@ -218,9 +231,14 @@ def bill_pdf(request, customer_id, year=None, month=None):
     total_amount = total_litres * Decimal(PRICE_PER_LITRE)
 
     pdf = generate_bill_pdf(
-        customer, entries.order_by('date'),
-        total_ml, total_litres, total_amount,
-        PRICE_PER_LITRE, year, month
+        customer,
+        entries.order_by('date'),
+        total_ml,
+        total_litres,
+        total_amount,
+        PRICE_PER_LITRE,
+        year,
+        month
     )
 
     response = HttpResponse(pdf.getvalue(), content_type='application/pdf')
@@ -251,9 +269,14 @@ def send_bill_whatsapp(request, customer_id, year, month):
     total_amount = total_litres * Decimal(PRICE_PER_LITRE)
 
     pdf = generate_bill_pdf(
-        customer, entries,
-        total_ml, total_litres, total_amount,
-        PRICE_PER_LITRE, year, month
+        customer,
+        entries,
+        total_ml,
+        total_litres,
+        total_amount,
+        PRICE_PER_LITRE,
+        year,
+        month
     )
 
     path = f"bills/bill_{customer.id}_{year}_{month}.pdf"
