@@ -253,50 +253,6 @@ def bill_pdf(request, customer_id, year=None, month=None):
 
 
 # ─────────────────────────────
-# WHATSAPP BILL
-# ─────────────────────────────
-@login_required(login_url='login')
-@require_http_methods(["POST"])
-def send_bill_whatsapp(request, customer_id, year, month):
-    customer = get_object_or_404(Customer, id=customer_id)
-
-    entries = MilkEntry.objects.filter(
-        customer=customer,
-        is_deleted=False,
-        date__year=year,
-        date__month=month
-    )
-
-    if not entries.exists():
-        return JsonResponse({'error': 'No entries'}, status=400)
-
-    total_ml = entries.aggregate(total=Sum('quantity_ml'))['total'] or 0
-    total_litres = Decimal(total_ml) / Decimal(1000)
-    total_amount = total_litres * Decimal(PRICE_PER_LITRE)
-
-    pdf = generate_bill_pdf(
-        customer,
-        entries,
-        total_ml,
-        total_litres,
-        total_amount,
-        PRICE_PER_LITRE,
-        year,
-        month
-    )
-
-    path = f"bills/bill_{customer.id}_{year}_{month}.pdf"
-    saved = default_storage.save(path, ContentFile(pdf.getvalue()))
-    pdf_url = request.build_absolute_uri(settings.MEDIA_URL + saved)
-
-    send_whatsapp_pdf(
-        phone_number="whatsapp:+9677815162",
-        pdf_url=pdf_url,
-        message=f"Hello {customer.name}, your milk bill is attached."
-    )
-
-    return JsonResponse({'status': 'sent'})
-
 
 # ─────────────────────────────
 # MONTHLY SUMMARY
