@@ -36,24 +36,7 @@ class Customer(models.Model):
     def __str__(self):
         return self.name
 
-    # ✅ SINGLE SOURCE OF TRUTH
-    # Balance = sum of all NON-DELETED milk entry amounts
-    def recalculate_balance(self):
-        amount_expr = ExpressionWrapper(
-            F('quantity_ml') * PRICE_PER_LITRE / Decimal('1000'),
-            output_field=DecimalField(max_digits=10, decimal_places=2)
-        )
 
-        total = (
-            self.milk_entries
-            .filter(is_deleted=False)
-            .aggregate(total=Sum(amount_expr))
-            .get('total')
-            or Decimal('0.00')
-        )
-
-        self.balance_amount = total
-        self.save(update_fields=['balance_amount'])
 
 
 class MilkEntry(models.Model):
@@ -72,16 +55,4 @@ class MilkEntry(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        ordering = ['-date']
-
-    @property
-    def litres(self):
-        return Decimal(self.quantity_ml) / Decimal('1000')
-
-    @property
-    def amount(self):
-        return self.litres * PRICE_PER_LITRE
-
-    def __str__(self):
-        return f"{self.customer.name} | {self.date} | {self.quantity_ml} ml"
+   
