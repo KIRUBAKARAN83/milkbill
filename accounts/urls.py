@@ -63,22 +63,10 @@ urlpatterns = [
         name='bill_pdf_month'
     ),
 
-    # ─────────────────────────
-    # WHATSAPP BILL
-    # ─────────────────────────
-    path(
-        'customers/<int:customer_id>/send-whatsapp/<int:year>/<int:month>/',
-        views.send_bill_whatsapp,
-        name='send_bill_whatsapp'
-    ),
 
     # ─────────────────────────
     # REPORTS
     # ─────────────────────────
     path('monthly-summary/', views.monthly_summary, name='monthly_summary'),
 
-    # ─────────────────────────
-    # FINANCE (SAFE STUBS)
-    # ─────────────────────────
-   
-]
+   ]
