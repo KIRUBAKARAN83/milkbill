@@ -15,7 +15,6 @@ from django.conf import settings
 from .models import Customer, MilkEntry, PRICE_PER_LITRE
 from .forms import MilkEntryForm, CustomerForm
 from .pdf_generation import generate_bill_pdf
-from .whatsapp import send_whatsapp_pdf
 
 
 # Dashboard
