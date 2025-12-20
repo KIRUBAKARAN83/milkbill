@@ -63,18 +63,33 @@ def home(request):
 # ─────────────────────────────
 @login_required(login_url='login')
 def customer_list(request):
-    customers = Customer.objects.all().prefetch_related('milk_entries')
+    query = request.GET.get('q', '').strip()
 
+    customers = Customer.objects.all()
+
+    if query:
+        customers = customers.filter(name__icontains=query)
+
+        # ✅ If exactly ONE customer → go directly to detail page
+        if customers.count() == 1:
+            return redirect(
+                'accounts:customer_detail',
+                customer_id=customers.first().id
+            )
+
+    # Calculate total litres safely
     for c in customers:
         total_ml = (
             c.milk_entries
             .filter(is_deleted=False)
-            .aggregate(total=Sum('quantity_ml'))['total'] or 0
+            .aggregate(total=Sum('quantity_ml'))
+            .get('total') or 0
         )
         c.total_litres = round(Decimal(total_ml) / Decimal(1000), 2)
 
     return render(request, 'accounts/customer_list.html', {
-        'customers': customers
+        'customers': customers,
+        'query': query,
     })
 
 
