@@ -22,8 +22,8 @@ def generate_bill_pdf(
     """
     RULE (FINAL):
     - customer.balance_amount = unpaid till previous month
-    - total_amount = current month amount
-    - total payable = previous balance + current month amount
+    - total_amount = current billing amount
+    - total payable = previous balance + current billing amount
     """
 
     buffer = BytesIO()
@@ -68,23 +68,20 @@ def generate_bill_pdf(
     # ---------------- TITLE ----------------
     elements.append(Paragraph("Milk Billing Invoice", title_style))
 
-  # ---------------- BILLING PERIOD ----------------
-if entries:
-    start_date = min(e.date for e in entries)
-    end_date = max(e.date for e in entries)
+    # ---------------- BILLING PERIOD (FIXED) ----------------
+    if entries:
+        start_date = min(e.date for e in entries)
+        end_date = max(e.date for e in entries)
 
-    if start_date.month == end_date.month and start_date.year == end_date.year:
-        # Same month → show month name
-        period_text = f"Billing Period: {start_date.strftime('%B %Y')}"
+        if start_date.month == end_date.month and start_date.year == end_date.year:
+            period_text = f"Billing Period: {start_date.strftime('%B %Y')}"
+        else:
+            period_text = (
+                f"Billing Period: "
+                f"{start_date.strftime('%d-%m-%Y')} to {end_date.strftime('%d-%m-%Y')}"
+            )
     else:
-        # Different range → show full date range
-        period_text = (
-            f"Billing Period: "
-            f"{start_date.strftime('%d-%m-%Y')} to {end_date.strftime('%d-%m-%Y')}"
-        )
-else:
-    period_text = "Billing Period: No entries"
-
+        period_text = "Billing Period: No entries"
 
     elements.append(
         Paragraph(
@@ -95,10 +92,10 @@ else:
 
     elements.append(Spacer(1, 0.2 * inch))
 
-    # ---------------- CUSTOMER SUMMARY (FIXED LOGIC) ----------------
+    # ---------------- CUSTOMER SUMMARY ----------------
     previous_balance = Decimal(customer.balance_amount or 0)
-    current_month_amount = Decimal(total_amount)
-    total_payable = previous_balance + current_month_amount
+    current_amount = Decimal(total_amount)
+    total_payable = previous_balance + current_amount
 
     elements.append(Paragraph("Customer Summary", heading_style))
 
@@ -106,8 +103,8 @@ else:
         [
             ["Customer Name", customer.name or "N/A"],
             ["Previous Balance (Unpaid)", f"₹ {previous_balance:.2f}"],
-            ['Total Litres:', f"{float(total_litres)} L"],
-            ["Current Month Amount", f"₹ {current_month_amount:.2f}"],
+            ["Total Litres", f"{total_litres:.2f} L"],
+            ["Current Billing Amount", f"₹ {current_amount:.2f}"],
             ["Total Payable", f"₹ {total_payable:.2f}"],
         ],
         colWidths=[3 * inch, 2 * inch]
@@ -149,7 +146,7 @@ else:
         str(total_ml),
         f"{total_litres:.2f}",
         f"{Decimal(price_per_litre):.2f}",
-        f"{current_month_amount:.2f}",
+        f"{current_amount:.2f}",
     ])
 
     entries_table = Table(table_data, colWidths=[1.2 * inch] * 5)
