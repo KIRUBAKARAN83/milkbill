@@ -24,61 +24,31 @@ from .whatsapp import send_whatsapp_pdf
 
 @login_required(login_url='login')
 def home(request):
-    query = request.GET.get('q', '').strip()
-    error = None
-
-    if query:
-        qs = Customer.objects.filter(name__icontains=query)
-        count = qs.count()
-
-        if count == 1:
-            return redirect(
-                'accounts:customer_detail',
-                customer_id=qs.first().id
-            )
-
-        elif count > 1:
-            return HttpResponseRedirect(
-                f"{reverse('accounts:customer_list')}?q={query}"
-            )
-
-        else:
-            error = "No customer found"
-
-    total_customers = Customer.objects.count()
-
-    total_ml = (
-        MilkEntry.objects
-        .filter(is_deleted=False)
-        .aggregate(total=Sum('quantity_ml'))
-        .get('total') or 0
-    )
-
-    total_litres = Decimal(total_ml) / Decimal('1000')
-    total_amount = total_litres * Decimal(PRICE_PER_LITRE)
-
-    total_balance = (
-        Customer.objects
-        .aggregate(balance=Sum('balance_amount'))
-        .get('balance') or Decimal('0')
-    )
-
-    last_entries = (
-        MilkEntry.objects
-        .filter(is_deleted=False)
-        .select_related('customer')
-        .order_by('-date')[:10]
-    )
-
-    return render(request, 'accounts/home.html', {
-        'error': error,
-        'total_customers': total_customers,
-        'total_litres': round(total_litres, 2),
-        'total_amount': round(total_amount, 2),
-        'total_balance': round(total_balance, 2),
-        'last_entries': last_entries,
-    })
-
+    try:
+        total_customers = Customer.objects.count()
+        total_ml = MilkEntry.objects.aggregate(total=Sum('quantity_ml'))['total'] or 0
+        total_litres = round(Decimal(total_ml) / Decimal(1000), 2) if total_ml else Decimal(0)
+        # total amount across all customers / entries
+        total_amount = round((Decimal(total_ml) / Decimal(1000)) * Decimal(PRICE_PER_LITRE), 2) if total_ml else Decimal(0)
+        total_balance = Customer.objects.aggregate(balance=Sum('balance_amount'))['balance'] or Decimal(0)
+        last_entries = MilkEntry.objects.select_related('customer').order_by('-date')[:10]
+        context = {
+            'total_customers': total_customers,
+            'total_litres': total_litres,
+            'total_balance': round(total_balance, 2),
+            'total_amount': total_amount,
+            'last_entries': last_entries,
+        }
+        return render(request, 'accounts/home.html', context)
+    except Exception as e:
+        return render(request, 'accounts/home.html', {
+            'total_customers': 0,
+            'total_litres': 0,
+            'total_balance': 0,
+            'total_amount': 0,
+            'last_entries': [],
+            'error': str(e)
+        })
 # ...existing code...
 
 @login_required(login_url='login')
@@ -175,24 +145,17 @@ def delete_entry(request, entry_id):
     return redirect('accounts:customer_detail', customer_id=customer_id)
 
 @login_required(login_url='login')
+@require_http_methods(["GET", "POST"])
 def edit_customer(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
-
     if request.method == 'POST':
         form = CustomerForm(request.POST, instance=customer)
         if form.is_valid():
-            form.save()  # ✅ balance is saved here
-            return redirect(
-                'accounts:customer_detail',
-                customer_id=customer.id
-            )
+            form.save()
+            return redirect('accounts:customer_detail', customer_id=customer.id)
     else:
         form = CustomerForm(instance=customer)
-
-    return render(request, 'accounts/customer_form.html', {
-        'form': form,
-        'customer': customer
-    })
+    return render(request, 'accounts/customer_form.html', {'form': form, 'customer': customer, 'title': 'Edit Customer'})
 
 @login_required(login_url='login')
 @require_http_methods(["POST"])
