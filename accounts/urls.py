@@ -80,6 +80,5 @@ urlpatterns = [
     # ─────────────────────────
     # FINANCE (SAFE STUBS)
     # ─────────────────────────
-    path('finance/', views.finance_list, name='finance_list'),
-    path('finance/add/', views.add_finance_entry, name='add_finance_entry'),
+   
 ]
