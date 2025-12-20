@@ -7,16 +7,22 @@ class CustomerForm(forms.ModelForm):
     Customer name only.
     Balance is calculated automatically.
     """
+    
     class Meta:
         model = Customer
-        fields = ['name']
+        fields = ['name', 'balance_amount']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Enter customer name',
-                'autocomplete': 'off'
+                'placeholder': 'Customer name'
+            }),
+            'balance_amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': 'Enter opening / current balance'
             }),
         }
+
 
 
 class MilkEntryForm(forms.ModelForm):
