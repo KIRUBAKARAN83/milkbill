@@ -48,9 +48,8 @@ body{background:#f4f6f9}
          class="btn btn-outline-danger btn-sm">📥 PDF</a>
 
       <form method="post"
-            action="{% url 'accounts:send_bill_whatsapp' customer.id month.year month.month %}">
         {% csrf_token %}
-        <button type="submit" class="btn btn-success btn-sm">
+        <button type="submit" href="https://web.whatsapp.com/" class="btn btn-success btn-sm">
           💬 WhatsApp
         </button>
       </form>
