@@ -84,25 +84,12 @@ def home(request):
 # ─────────────────────────────
 @login_required(login_url='login')
 def customer_list(request):
-    query = request.GET.get('q', '').strip()
     customers = Customer.objects.all()
-
-    if query:
-        customers = customers.filter(name__icontains=query)
-
-    for c in customers:
-        total_ml = (
-            c.milk_entries
-            .filter(is_deleted=False)
-            .aggregate(total=Sum('quantity_ml'))
-            .get('total') or 0
-        )
-        c.total_litres = round(Decimal(total_ml) / Decimal('1000'), 2)
-
-    return render(request, 'accounts/customer_list.html', {
-        'customers': customers,
-        'query': query,
-    })
+    for customer in customers:
+        total_ml = MilkEntry.objects.filter(customer=customer).aggregate(total=Sum('quantity_ml'))['total'] or 0
+        customer.total_ml = total_ml
+        customer.total_litres = round(Decimal(total_ml) / Decimal(1000), 2) if total_ml else Decimal(0)
+    return render(request, 'accounts/customer_list.html', {'customers': customers})
 
 # ─────────────────────────────
 # CUSTOMER DETAIL
