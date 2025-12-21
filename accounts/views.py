@@ -35,9 +35,9 @@ def home(request):
 @login_required(login_url='login')
 def customer_list(request):
     customers = Customer.objects.all()
-    for c in customers:
-        total_ml = MilkEntry.objects.filter(customer=c).aggregate(total=Sum('quantity_ml'))['total'] or 0
-        c.total_litres = round(Decimal(total_ml) / Decimal(1000), 2)
+    for customer in customers:
+        total_ml = MilkEntry.objects.filter(customer=customer).aggregate(total=Sum('quantity_ml'))['total'] or 0
+        customer.total_litres = round(Decimal(total_ml) / Decimal(1000), 2)
     return render(request, 'accounts/customer_list.html', {'customers': customers})
 
 
@@ -45,13 +45,16 @@ def customer_list(request):
 def customer_detail(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
     entries = MilkEntry.objects.filter(customer=customer).order_by('-date')
+
     return render(request, 'accounts/customer_detail.html', {
         'customer': customer,
-        'entries': entries
+        'entries': entries,
+        'total_entries': entries.count()
     })
 
 
 @login_required(login_url='login')
+@require_http_methods(["GET", "POST"])
 def add_entry(request):
     if request.method == 'POST':
         form = MilkEntryForm(request.POST)
@@ -87,25 +90,82 @@ def delete_entry(request, entry_id):
 def chart_data(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
     entries = MilkEntry.objects.filter(customer=customer).order_by('date')[:30]
+
     return JsonResponse({
         'labels': [e.date.strftime('%Y-%m-%d') for e in entries],
-        'data': [float(e.litres) for e in entries]
+        'data': [float(e.litres) for e in entries],
     })
 
 
 @login_required(login_url='login')
-def bill_pdf(request, customer_id):
+def bill_pdf(request, customer_id, year=None, month=None):
     customer = get_object_or_404(Customer, id=customer_id)
-    entries = MilkEntry.objects.filter(customer=customer)
+
+    if year and month:
+        entries = MilkEntry.objects.filter(
+            customer=customer,
+            date__year=year,
+            date__month=month
+        )
+        filename = f"bill_{customer.name}_{year}_{month}"
+    else:
+        entries = MilkEntry.objects.filter(customer=customer)
+        filename = f"bill_{customer.name}_all"
 
     total_ml = entries.aggregate(total=Sum('quantity_ml'))['total'] or 0
     total_litres = Decimal(total_ml) / Decimal(1000)
     total_amount = total_litres * Decimal(PRICE_PER_LITRE)
 
     pdf = generate_bill_pdf(
-        customer, entries, total_ml, total_litres, total_amount, PRICE_PER_LITRE
+        customer,
+        entries,
+        total_ml,
+        total_litres,
+        total_amount,
+        PRICE_PER_LITRE,
+        year,
+        month
     )
 
     response = HttpResponse(pdf.getvalue(), content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="bill.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
     return response
+
+
+@login_required(login_url='login')
+def monthly_summary(request):
+    today = timezone.localdate()
+    start_date = today.replace(day=1)
+    end_date = (start_date + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+
+    entries = MilkEntry.objects.filter(date__range=[start_date, end_date]).select_related('customer')
+
+    summary = {}
+    for entry in entries:
+        cid = entry.customer.id
+        summary.setdefault(cid, {
+            'name': entry.customer.name,
+            'total_ml': 0,
+            'amount': Decimal(0)
+        })
+        summary[cid]['total_ml'] += entry.quantity_ml
+        summary[cid]['amount'] += entry.amount
+
+    summary_list = []
+    for s in summary.values():
+        litres = round(Decimal(s['total_ml']) / Decimal(1000), 2)
+        summary_list.append({
+            'name': s['name'],
+            'total_ml': s['total_ml'],
+            'litres': litres,
+            'amount': round(s['amount'], 2)
+        })
+
+    total_amount = round(sum(i['amount'] for i in summary_list), 2)
+
+    return render(request, 'accounts/monthly_summary.html', {
+        'summary': summary_list,
+        'total_amount': total_amount,
+        'start': start_date,
+        'end': end_date,
+    })
