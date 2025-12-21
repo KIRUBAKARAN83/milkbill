@@ -6,69 +6,34 @@ class CustomerForm(forms.ModelForm):
         model = Customer
         fields = ['name', 'balance_amount']
         widgets = {
-            'name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter customer name'
-            }),
-            'balance_amount': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Enter balance amount',
-                'step': '0.01',
-                'min': '0'
-            }),
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'balance_amount': forms.NumberInput(attrs={'class': 'form-control'}),
         }
 
 class MilkEntryForm(forms.ModelForm):
-    # extra field to allow typing a new customer name
     customer_name = forms.CharField(
         required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Type new customer name (or leave blank to select)',
-            'id': 'new_customer_input'
-        }),
-        label='New Customer (optional)'
+        label="New Customer",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
     )
 
     class Meta:
         model = MilkEntry
         fields = ['customer', 'customer_name', 'date', 'quantity_ml']
         widgets = {
-            'customer': forms.Select(attrs={
-                'class': 'form-select select-customer',
-                'id': 'id_customer_select',
-                'data-placeholder': '-- Select or search customer --'
-            }),
-            'date': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date',
-                'id': 'id_date_input'
-            }),
-            'quantity_ml': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': '0',
-                'step': '1',
-                'placeholder': 'Enter quantity in ml (0 allowed)',
-                'id': 'id_quantity_input'
-            }),
+            'customer': forms.Select(attrs={'class': 'form-select'}),
+            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'quantity_ml': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
         }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['customer'].queryset = Customer.objects.all().order_by('name')
-        self.fields['customer'].required = False
 
     def clean(self):
         cleaned = super().clean()
-        cust = cleaned.get('customer')
-        cust_name = cleaned.get('customer_name')
-        qty = cleaned.get('quantity_ml')
-        
-        if not cust and not cust_name:
-            raise forms.ValidationError("Please select an existing customer or enter a customer name.")
-        
-        # Allow 0 quantity
-        if qty is None:
-            raise forms.ValidationError("Quantity is required.")
-        
+        customer = cleaned.get("customer")
+        customer_name = cleaned.get("customer_name")
+
+        if not customer and not customer_name:
+            raise forms.ValidationError(
+                "Select existing customer OR enter a new customer name."
+            )
+
         return cleaned
