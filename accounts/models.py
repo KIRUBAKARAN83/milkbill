@@ -29,18 +29,7 @@ class Customer(models.Model):
     def __str__(self):
         return self.name
 
-    # ✅ THIS IS WHAT YOUR VIEWS EXPECT
-    def recalculate_balance(self):
-        total_ml = (
-            self.milk_entries
-            .aggregate(total=Sum('quantity_ml'))
-            .get('total') or 0
-        )
-
-        litres = Decimal(total_ml) / Decimal('1000')
-        self.balance_amount = litres * PRICE_PER_LITRE
-        self.save(update_fields=['balance_amount'])
-
+ 
 
 class MilkEntry(models.Model):
     customer = models.ForeignKey(
