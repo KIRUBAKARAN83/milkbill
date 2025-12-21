@@ -15,6 +15,8 @@ from django.conf import settings
 from .models import Customer, MilkEntry, PRICE_PER_LITRE
 from .forms import MilkEntryForm, CustomerForm
 from .pdf_generation import generate_bill_pdf
+from django.db import transaction
+from django.contrib import messages
 
 
 
@@ -99,7 +101,6 @@ def customer_detail(request, customer_id):
     return render(request, 'accounts/customer_detail.html', context)
 
 @login_required(login_url='login')
-@require_http_methods(["GET", "POST"])
 def add_entry(request):
     if request.method == 'POST':
         form = MilkEntryForm(request.POST)
@@ -107,22 +108,34 @@ def add_entry(request):
             customer = form.cleaned_data.get('customer')
             customer_name = form.cleaned_data.get('customer_name')
 
-            # CREATE CUSTOMER IF NOT SELECTED
-            if not customer:
-                customer, _ = Customer.objects.get_or_create(
-                    name=customer_name.strip()
+            # NORMALIZE
+            if customer_name:
+                customer_name = customer_name.strip()
+
+            # 🔥 FORCE CUSTOMER RESOLUTION
+            if customer:
+                resolved_customer = customer
+            elif customer_name:
+                resolved_customer, _ = Customer.objects.get_or_create(
+                    name=customer_name
+                )
+            else:
+                # THIS SHOULD NEVER HAPPEN IF FORM IS CORRECT
+                form.add_error(None, "Customer resolution failed.")
+                return render(request, 'accounts/entry_form.html', {'form': form})
+
+            # 🔥 ATOMIC SAVE (NO PARTIAL FAILURES)
+            with transaction.atomic():
+                entry = MilkEntry.objects.create(
+                    customer=resolved_customer,
+                    date=form.cleaned_data['date'],
+                    quantity_ml=form.cleaned_data['quantity_ml']
                 )
 
-            entry = MilkEntry.objects.create(
-                customer=customer,
-                date=form.cleaned_data['date'],
-                quantity_ml=form.cleaned_data['quantity_ml']
-            )
+                resolved_customer.balance_amount += entry.amount
+                resolved_customer.save(update_fields=['balance_amount'])
 
-            # 🔥 UPDATE BALANCE (THIS FIXES YOUR ISSUE)
-            customer.balance_amount += entry.amount
-            customer.save(update_fields=['balance_amount'])
-
+            messages.success(request, "Milk entry saved successfully.")
             return redirect('accounts:customer_list')
     else:
         form = MilkEntryForm()
