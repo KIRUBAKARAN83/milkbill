@@ -100,40 +100,28 @@ def customer_detail(request, customer_id):
 @login_required(login_url='login')
 @require_http_methods(["GET", "POST"])
 def add_entry(request):
-    form = MilkEntryForm(request.POST or None)
-
     if request.method == 'POST':
-        if not form.is_valid():
-            # This exposes form errors instead of 500
-            return render(request, 'accounts/entry_form.html', {
-                'form': form
-            })
-
-        customer = form.cleaned_data.get('customer')
-        name = form.cleaned_data.get('customer_name')
-        date = form.cleaned_data['date']
-        quantity_ml = form.cleaned_data['quantity_ml']
-
-        if not customer:
-            if not name:
-                form.add_error(None, "Customer is required")
-                return render(request, 'accounts/entry_form.html', {'form': form})
-
-            customer, _ = Customer.objects.get_or_create(
-                name=name.strip()
-            )
-
-        MilkEntry.objects.create(
-            customer=customer,
-            date=date,
-            quantity_ml=quantity_ml
-        )
-
-        return redirect('accounts:customer_list')
-
+        form = MilkEntryForm(request.POST)
+        if form.is_valid():
+            customer = form.cleaned_data.get('customer')
+            new_name = form.cleaned_data.get('customer_name')
+            
+            if not customer and new_name:
+                customer, created = Customer.objects.get_or_create(
+                    name=new_name.strip()
+                )
+            
+            if customer:
+                entry = MilkEntry.objects.create(
+                    customer=customer,
+                    date=form.cleaned_data['date'],
+                    quantity_ml=form.cleaned_data['quantity_ml']
+                )
+                return redirect('accounts:customer_list')
+    else:
+        form = MilkEntryForm()
+    
     return render(request, 'accounts/entry_form.html', {'form': form})
-
-
 
 @login_required(login_url='login')
 @require_http_methods(["GET", "POST"])
