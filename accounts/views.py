@@ -100,18 +100,39 @@ def customer_detail(request, customer_id):
 @login_required(login_url='login')
 @require_http_methods(["GET", "POST"])
 def add_entry(request):
-    if request.method == 'POST':
-        form = MilkEntryForm(request.POST)
-        if form.is_valid():
-            entry = form.save()   # ✅ THIS IS THE FIX
-            entry.customer.recalculate_balance()
-            return redirect('accounts:customer_list')
-    else:
-        form = MilkEntryForm()
+    form = MilkEntryForm(request.POST or None)
 
-    return render(request, 'accounts/entry_form.html', {
-        'form': form
-    })
+    if request.method == 'POST':
+        if not form.is_valid():
+            # This exposes form errors instead of 500
+            return render(request, 'accounts/entry_form.html', {
+                'form': form
+            })
+
+        customer = form.cleaned_data.get('customer')
+        name = form.cleaned_data.get('customer_name')
+        date = form.cleaned_data['date']
+        quantity_ml = form.cleaned_data['quantity_ml']
+
+        if not customer:
+            if not name:
+                form.add_error(None, "Customer is required")
+                return render(request, 'accounts/entry_form.html', {'form': form})
+
+            customer, _ = Customer.objects.get_or_create(
+                name=name.strip()
+            )
+
+        MilkEntry.objects.create(
+            customer=customer,
+            date=date,
+            quantity_ml=quantity_ml
+        )
+
+        return redirect('accounts:customer_list')
+
+    return render(request, 'accounts/entry_form.html', {'form': form})
+
 
 
 @login_required(login_url='login')
