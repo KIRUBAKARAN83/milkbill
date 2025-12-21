@@ -8,12 +8,18 @@ PRICE_PER_LITRE = Decimal(getattr(settings, 'PRICE_PER_LITRE', 50.0))
 
 
 class Customer(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(
+        max_length=200,
+        blank=False,
+        null=False,
+        unique=True
+    )
     balance_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=Decimal('0.00')
+        default=0
     )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
